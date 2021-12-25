@@ -1,0 +1,25 @@
+{
+  "name": "satori-protocol",
+  "version": "1.0.0",
+  "description": "satori Protocol",
+  "main": "truffle-config.js",
+  "directories": {},
+  "scripts": {
+    "dev": "rm -rf ./build && truffle migrate --network dev"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "dependencies": {
+    "@openzeppelin/contracts": "^3.2.0",
+    "@truffle/artifactor": "^4.0.84",
+    "@uniswap/sdk": "^3.0.3",
+    "@uniswap/v2-periphery": "^1.1.0-beta.0",
+    "@nomiclabs/buidler": "^1.4.8",
+    "bignumber.js": "^7.2.1"
+  },
+  "devDependencies": {
+    "@truffle/hdwallet-provider": "^1.2.2",
+    "decimal": "^0.0.2",
+    "ethers": "^5.4.1"
+  }
+}
