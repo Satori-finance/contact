@@ -62,8 +62,8 @@ library Requires {
         internal
         view
     {
-        require(market.quoteAsset == state.collateralAsset, "Requires: QuoteAsset is invalid");
-        require(market.baseAsset != market.quoteAsset, "Requires: BaseAsset and QuoteAsset are duplicated");
+        require(market.baseAsset == state.collateralAsset, "Requires: base is invalid");
+        require(market.baseAsset != market.quoteAsset, "Requires: Base and Quote are duplicated");
         // require(isAssetExist(state, market.baseAsset), "MARKET_BASE_ASSET_NOT_EXIST");
         // require(isAssetExist(state, market.quoteAsset), "MARKET_QUOTE_ASSET_NOT_EXIST");
     }

@@ -8,8 +8,6 @@ import "./lib/Requires.sol";
 import "./lib/Events.sol";
 import "./GlobalStore.sol";
 
-import '@nomiclabs/buidler/console.sol';
-
 contract Admin is Ownable, GlobalStore {
     function createMarket(
         Types.Market memory market
@@ -19,8 +17,11 @@ contract Admin is Ownable, GlobalStore {
     {
         Requires.requireMarketAssetsValid(state, market);
         Requires.requireMarketNotExist(state, market);
-
-        market.valid = true;
+        // Requires.requireDecimalLessOrEquanThanOne(market.auctionRatioStart);
+        // Requires.requireDecimalLessOrEquanThanOne(market.auctionRatioPerBlock);
+        // Requires.requireDecimalGreaterThanOne(market.liquidateRate);
+        // Requires.requireDecimalGreaterThanOne(market.withdrawRate);
+        // require(market.withdrawRate > market.liquidateRate, "WITHDARW_RATE_LESS_OR_EQUAL_THAN_LIQUIDATE_RATE");
 
         state.markets[state.marketsCount++] = market;
         Events.logCreateMarket(market);

@@ -24,7 +24,6 @@ library Transfer {
             state.collateralBalances[account] = state.collateralBalances[account].add(collateral.value);
             state.collateralTotal = state.collateralTotal.sub(collateral.value);
         } else {
-            require(state.collateralBalances[account] >= collateral.value, "Transfer: collateral balance not enough");
             state.collateralBalances[account] = state.collateralBalances[account].sub(collateral.value);
             state.collateralTotal = state.collateralTotal.add(collateral.value);
         }
