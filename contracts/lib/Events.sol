@@ -32,6 +32,8 @@ library Events {
     );
 
     event CreateMarket(Types.Market market);
+    event DepositForRisk(address indexed from, uint256 amount);
+    event WithdrawFromRisk(uint256 amount);
 
     // ============ Structs ============
 
@@ -101,6 +103,29 @@ library Events {
     {
         emit CreateMarket(market);
     }
+
+    function depositForRisk(
+        address from,
+        uint256 amount
+    )
+        internal
+    {
+        emit DepositForRisk(from, amount);
+    }
+
+    function withdrawFromRisk(
+        uint256 amount
+    )
+        internal
+    {
+        emit WithdrawFromRisk(amount);
+    }
+
+
+
+
+
+
 
     // ============ Private Functions ============
 
