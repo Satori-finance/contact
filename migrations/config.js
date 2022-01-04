@@ -12,7 +12,7 @@ const chains = {
         knownContracts: {
             USDT: "",
         }
-    }
+    },
 }
 
 const ckeys = {

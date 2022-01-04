@@ -8,6 +8,7 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 import "./lib/Types.sol";
 import "./lib/Transfer.sol";
 import "./GlobalStore.sol";
+import "./lib/Events.sol";
 
 import '@nomiclabs/buidler/console.sol';
 
@@ -21,7 +22,7 @@ contract Exchange is
     using Order for Types.Order;
     using Position for Types.Position;
 
-    mapping (bytes32 => Types.Position) public positions;
+    mapping(bytes32 => Types.Position) public positions;
     bytes32[] public allPositions;
 
     address public matchOperator;
@@ -41,7 +42,7 @@ contract Exchange is
     }
 
     //======== view =======
-    function positionNumber() public view returns(uint256) {
+    function positionNumber() public view returns (uint256) {
         return allPositions.length;
     }
 
@@ -59,13 +60,14 @@ contract Exchange is
                 closePosition(order);
             } else if (order.action == Types.OrderAction.Through) {
                 throughPosition(order);
-            }  else if (order.action == Types.OrderAction.ThroughX) {
+            } else if (order.action == Types.OrderAction.ThroughX) {
                 throughXPosition(order);
             } else {
                 openOrIncreasePosition(order);
             }
         }
     }
+
 
     function openOrIncreasePosition(
         Types.Order memory order
@@ -75,7 +77,9 @@ contract Exchange is
         bytes32 orderHash = order.getHash();
         Types.Position storage position = positions[orderHash];
 
+
         require(position.isClosing == false, "Exchange: this position is closing");
+
 
         if (position.baseCollateral == 0) {
             allPositions.push(orderHash);
@@ -102,13 +106,22 @@ contract Exchange is
         position.quoteAssetAmount.value = position.quoteAssetAmount.value.add(order.quoteAssetAmount);
     }
 
-
     function increaseOrDecreaseCollateral(
-
+        bytes32 orderHash,
+        Types.Wei memory amount
     )
-        private
+        public
     {
+        Types.Position storage position = positions[orderHash];
+        require(position.owner == msg.sender, "Exchange:This is not your position");
+        if (amount.sign) {
+            Transfer.transferCollateral(state, msg.sender, amount.value);
+            position.returnCollateral(amount);
+        } else {
+            Transfer.decreaseCollateral(state, position, amount.value);
+        }
 
+        Events.increaseOrDecreaseCollateral(amount, orderHash, msg.sender);
     }
 
     function closePosition(
@@ -118,24 +131,24 @@ contract Exchange is
     {
         bytes32 orderHash = order.getHash();
         Types.Position storage position = positions[orderHash];
+        
         uint256 baseAssetAmount = order.baseAssetAmount;
         uint256 quoteAssetAmount = order.quoteAssetAmount;
 
-        require(position.baseAssetAmount.value != 0, "Exchange: postion is closed");
-        require(baseAssetAmount <= position.baseAssetAmount.value, "Exchange: compensate amount over postion");
+        require(position.baseAssetAmount.value != 0, "Exchange: position is closed");
+        require(baseAssetAmount <= position.baseAssetAmount.value, "Exchange: compensate amount over position");
         uint256 targetBaseAmount = position.baseAssetAmount.value.sub(baseAssetAmount);
 
-        uint256 targetQuetoAmount = position.quoteAssetAmount.value.
-                mul(targetBaseAmount).
-                div(position.baseAssetAmount.value);
+        uint256 targetQuetoAmount = position.quoteAssetAmount.value
+            .mul(targetBaseAmount)
+            .div(position.baseAssetAmount.value);
 
-        uint256 targetCollateral = position.totalCollateral.
-                mul(targetBaseAmount).
-                div(position.baseAssetAmount.value);  
+        uint256 targetCollateral = position.totalCollateral
+            .mul(targetBaseAmount)
+            .div(position.baseAssetAmount.value);
 
         require(targetQuetoAmount <= position.quoteAssetAmount.value, "Exchange: invalid target quetoAmount");
         require(targetCollateral <= position.totalCollateral, "Exchange: invalid target collateral");
-
 
         uint256 quoteAssetDetal = position.quoteAssetAmount.value.sub(targetQuetoAmount);
         uint256 returnCollateral = position.totalCollateral.sub(targetCollateral);
@@ -144,7 +157,7 @@ contract Exchange is
         uint256 x = quoteAssetAmount.add(returnCollateral);
         require(x >= quoteAssetDetal, "Exchange: Collateral not enough");
 
-        if(quoteAssetAmount > quoteAssetDetal) {
+        if (quoteAssetAmount > quoteAssetDetal) {
             uint256 profit = quoteAssetAmount.sub(quoteAssetDetal);
             Transfer.getProfit(state, position.owner, profit);
         } else {
@@ -160,8 +173,8 @@ contract Exchange is
         }
 
         Types.Wei memory usedCollateral = Types.Wei({
-            sign: false,
-            value: returnCollateral
+            sign : false,
+            value : returnCollateral
         });
         position.returnCollateral(usedCollateral);
 
@@ -181,13 +194,13 @@ contract Exchange is
         uint256 baseAssetAmount = order.baseAssetAmount;
         uint256 quoteAssetAmount = order.quoteAssetAmount;
 
-        require(position.baseAssetAmount.value != 0, "Exchange: postion is closed");
-        require(baseAssetAmount <= position.baseAssetAmount.value, "Exchange: compensate amount over postion");
+        require(position.baseAssetAmount.value != 0, "Exchange: position is closed");
+        require(baseAssetAmount <= position.baseAssetAmount.value, "Exchange: compensate amount over position");
         uint256 targetBaseAmount = position.baseAssetAmount.value.sub(baseAssetAmount);
 
-        uint256 targetQuetoAmount = position.quoteAssetAmount.value.
-                mul(targetBaseAmount).
-                div(position.baseAssetAmount.value);
+        uint256 targetQuetoAmount = position.quoteAssetAmount.value
+            .mul(targetBaseAmount)
+            .div(position.baseAssetAmount.value);
 
         require(targetQuetoAmount <= position.quoteAssetAmount.value, "Exchange: invalid target quetoAmount");
 
@@ -207,7 +220,7 @@ contract Exchange is
         } else {
             usedCollateral.value = position.totalCollateral;
 
-            Transfer.useRiskReserves(state, quoteAssetDetal.sub(avalia));  
+            Transfer.useRiskReserves(state, quoteAssetDetal.sub(avalia));
         }
 
         position.returnCollateral(usedCollateral);
@@ -220,8 +233,60 @@ contract Exchange is
 
     function throughXPosition(
         Types.Order memory order
-    ) private {
+    )
+        private
+    {
+        bytes32 orderHash = order.getHash();
+        Types.Position storage position = positions[orderHash];
+        uint256 baseAssetAmount = order.baseAssetAmount;
+        uint256 quoteAssetAmount = order.quoteAssetAmount;
 
+        require(position.baseAssetAmount.value != 0, "Exchange: position is closed");
+        require(baseAssetAmount <= position.baseAssetAmount.value, "Exchange: compensate amount over position");
+        uint256 targetBaseAmount = position.baseAssetAmount.value.sub(baseAssetAmount);
+
+        uint256 targetQuetoAmount = position.quoteAssetAmount.value
+            .mul(targetBaseAmount)
+            .div(position.baseAssetAmount.value);
+
+        require(targetQuetoAmount <= position.quoteAssetAmount.value, "Exchange: invalid target quetoAmount");
+
+        Types.Wei memory totalCollateral = Types.Wei({
+            sign: false,
+            value: position.totalCollateral
+        });
+
+        position.returnCollateral(totalCollateral);
+        Transfer.returnCollateral(state, position.owner, totalCollateral.value, 0);
+
+        position.baseAssetAmount.value = targetBaseAmount;
+        position.quoteAssetAmount.value = targetQuetoAmount;
+        position.isClosing = true;
+    }
+
+    function decreasePosition(
+        Types.Order memory order
+    )
+        private
+    {
+        bytes32 orderHash = order.getHash();
+        Types.Position storage position = positions[orderHash];
+        uint256 baseAssetAmount = order.baseAssetAmount;
+        uint256 quoteAssetAmount = order.quoteAssetAmount;
+
+        require(position.baseAssetAmount.value != 0, "Exchange: position is closed");
+        require(baseAssetAmount <= position.baseAssetAmount.value, "Exchange: compensate amount over position");
+        uint256 targetBaseAmount = position.baseAssetAmount.value.sub(baseAssetAmount);
+
+        uint256 targetQuetoAmount = position.quoteAssetAmount.value
+            .mul(targetBaseAmount)
+            .div(position.baseAssetAmount.value);
+
+        require(targetQuetoAmount <= position.quoteAssetAmount.value, "Exchange: invalid target quetoAmount");
+
+
+        position.baseAssetAmount.value = targetBaseAmount;
+        position.quoteAssetAmount.value = targetQuetoAmount;
     }
 
     function getOrderFromOrderParam(

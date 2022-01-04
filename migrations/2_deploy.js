@@ -12,6 +12,7 @@ module.exports = async (deployer, network, accounts) => {
 
     const amount = "10000"
     await usdc.transfer(accounts[1], amount)
+    await usdc.transfer(accounts[2], amount)
 
     await deployer.deploy(ERC20Token, "ETH", "ETH", 18, "10000000")
     const eth = await ERC20Token.deployed()

@@ -13,12 +13,13 @@ library Transfer {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
+    //盈利
     function getProfit(
         Store.State storage state,
         address account,
         uint256 amount
     )
-        internal
+    internal
     {
         state.collateralBalances[account] = state.collateralBalances[account].add(amount);
     }
@@ -27,7 +28,7 @@ library Transfer {
         Store.State storage state,
         uint256 amount
     )
-        internal
+    internal
     {
         state.riskReserves = state.riskReserves.add(amount);
     }
@@ -36,23 +37,44 @@ library Transfer {
         Store.State storage state,
         uint256 amount
     )
-        internal
+    internal
     {
         require(state.riskReserves > amount, "Transfer: risk reserves not enough");
         state.riskReserves = state.riskReserves.sub(amount);
     }
+
 
     function transferCollateral(
         Store.State storage state,
         address account,
         uint256 amount
     )
-        internal
+    internal
     {
         require(state.collateralBalances[account] >= amount, "Transfer: collateral balance not enough");
         state.collateralBalances[account] = state.collateralBalances[account].sub(amount);
         state.collateralTotal = state.collateralTotal.add(amount);
     }
+
+
+    function decreaseCollateral(
+        Store.State storage state,
+        Types.Position storage position,
+        uint256 amount
+    )
+    internal
+    {
+        address account = position.owner;
+        require(state.collateralBalances[account] >= amount, "Transfer: collateral balance not enough");
+        uint256 ext = position.totalCollateral.sub(position.baseCollateral);
+
+        require(ext >= amount, "Transfer: ext collateral balance not enough");
+        position.totalCollateral = position.totalCollateral.sub(amount);
+        state.collateralBalances[account] = state.collateralBalances[account].add(amount);
+        state.collateralTotal = state.collateralTotal.sub(amount);
+    }
+
+
 
     function returnCollateral(
         Store.State storage state,
@@ -60,31 +82,31 @@ library Transfer {
         uint256 amount,
         uint256 actual
     )
-        internal
+    internal
     {
         require(amount >= actual, "Transfer: invalid amount");
         state.collateralBalances[account] = state.collateralBalances[account].add(actual);
         state.collateralTotal = state.collateralTotal.sub(amount);
     }
 
-    function transferIn (
+    function transferIn(
         address token,
         address from,
         uint256 amount
-    ) 
-        internal
+    )
+    internal
     {
         if (address(token) != address(0)) {
             IERC20(token).safeTransferFrom(from, address(this), amount);
         }
     }
 
-    function transferOut (
+    function transferOut(
         address token,
         address to,
         uint256 amount
-    ) 
-        internal
+    )
+    internal
     {
         if (address(token) == address(0)) {
             safeTransferETH(to, amount);
@@ -94,7 +116,7 @@ library Transfer {
     }
 
     function safeTransferETH(address to, uint value) internal {
-        (bool success,) = to.call{value:value}(new bytes(0));
+        (bool success,) = to.call{value : value}(new bytes(0));
         require(success, 'ETH_TRANSFER_FAILED');
     }
 }

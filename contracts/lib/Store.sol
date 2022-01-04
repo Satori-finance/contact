@@ -10,6 +10,8 @@ library Store {
         address collateralAsset; //usdc
 
         uint256 collateralTotal; //
+        
+        uint256 riskReserves; //
 
         // all markets
         mapping(uint256 => Types.Market) markets;
@@ -18,6 +20,6 @@ library Store {
         mapping(address => uint256) collateralBalances; //usdc
 
         // order hash => position info
-        mapping (bytes32 => Types.Position) positions;
+        mapping(bytes32 => Types.Position) positions;
     }
 }

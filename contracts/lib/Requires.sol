@@ -2,7 +2,7 @@ pragma solidity ^0.6.0;
 pragma experimental ABIEncoderV2;
 
 import "./Store.sol";
-// import "./Consts.sol";
+import "./Consts.sol";
 // import "./Decimal.sol";
 // import "../interfaces/IStandardToken.sol";
 // import "../funding/CollateralAccounts.sol";
@@ -11,39 +11,18 @@ import "./Store.sol";
  * Library to handle restrictions
  */
 library Requires {
-    // function requireAssetExist(
-    //     Store.State storage state,
-    //     address asset
-    // )
-    //     internal
-    //     view
-    // {
-    //     require(isAssetExist(state, asset), "ASSET_NOT_EXIST");
-    // }
 
-    // function requireAssetNotExist(
-    //     Store.State storage state,
-    //     address asset
-    // )
-    //     internal
-    //     view
-    // {
-    //     require(!isAssetExist(state, asset), "ASSET_ALREADY_EXIST");
-    // }
+    //=================== requires ========================
 
-    // function requireMarketIDAndAssetMatch(
-    //     Store.State storage state,
-    //     uint16 marketID,
-    //     address asset
-    // )
-    //     internal
-    //     view
-    // {
-    //     require(
-    //         asset == state.markets[marketID].baseAsset || asset == state.markets[marketID].quoteAsset,
-    //         "ASSET_NOT_BELONGS_TO_MARKET"
-    //     );
-    // }
+    function requireMarketIdValid(
+        Store.State storage state,
+        uint256 marketId
+    )
+        internal
+        view
+    {
+        require(isMarketIdValid(state, marketId), "Requires: Market not exist");
+    }
 
     function requireMarketNotExist(
         Store.State storage state,
@@ -62,179 +41,35 @@ library Requires {
         internal
         view
     {
-        require(market.baseAsset == state.collateralAsset, "Requires: base is invalid");
-        require(market.baseAsset != market.quoteAsset, "Requires: Base and Quote are duplicated");
-        // require(isAssetExist(state, market.baseAsset), "MARKET_BASE_ASSET_NOT_EXIST");
-        // require(isAssetExist(state, market.quoteAsset), "MARKET_QUOTE_ASSET_NOT_EXIST");
+        require(market.quoteAsset == state.collateralAsset, "Requires: QuoteAsset is invalid");
+        require(market.baseAsset != market.quoteAsset, "Requires: BaseAsset and QuoteAsset are duplicated");
     }
 
-    // function requireCashLessThanOrEqualContractBalance(
-    //     Store.State storage state,
-    //     address asset
-    // )
-    //     internal
-    //     view
-    // {
-    //     if (asset == Consts.ETHEREUM_TOKEN_ADDRESS()) {
-    //         if (state.cash[asset] > 0) {
-    //             require(uint256(state.cash[asset]) <= address(this).balance, "CONTRACT_BALANCE_NOT_ENOUGH");
-    //         }
-    //     } else {
-    //         if (state.cash[asset] > 0) {
-    //             require(uint256(state.cash[asset]) <= IStandardToken(asset).balanceOf(address(this)), "CONTRACT_BALANCE_NOT_ENOUGH");
-    //         }
-    //     }
-    // }
+    function requireFeeRateValid(
+        uint256 feeRate
+    )
+        internal
+        view
+    {
+        require(feeRate <= Consts.Denominator(), "Requires: invalid fee rate");
+    }
 
-    // function requirePriceOracleAddressValid(
-    //     address oracleAddress
-    // )
-    //     internal
-    //     pure
-    // {
-    //     require(oracleAddress != address(0), "ORACLE_ADDRESS_NOT_VALID");
-    // }
+    //=================== validates ========================
 
-    // function requireDecimalLessOrEquanThanOne(
-    //     uint256 decimal
-    // )
-    //     internal
-    //     pure
-    // {
-    //     require(decimal <= Decimal.one(), "DECIMAL_GREATER_THAN_ONE");
-    // }
-
-    // function requireDecimalGreaterThanOne(
-    //     uint256 decimal
-    // )
-    //     internal
-    //     pure
-    // {
-    //     require(decimal > Decimal.one(), "DECIMAL_LESS_OR_EQUAL_THAN_ONE");
-    // }
-
-    // function requireMarketIDExist(
-    //     Store.State storage state,
-    //     uint16 marketID
-    // )
-    //     internal
-    //     view
-    // {
-    //     require(marketID < state.marketsCount, "MARKET_NOT_EXIST");
-    // }
-
-    // function requireMarketBorrowEnabled(
-    //     Store.State storage state,
-    //     uint16 marketID
-    // )
-    //     internal
-    //     view
-    // {
-    //     require(state.markets[marketID].borrowEnable, "MARKET_BORROW_DISABLED");
-    // }
-
-    // function requirePathNormalStatus(
-    //     Store.State storage state,
-    //     Types.BalancePath memory path
-    // )
-    //     internal
-    //     view
-    // {
-    //     if (path.category == Types.BalanceCategory.CollateralAccount) {
-    //         requireAccountNormal(state, path.marketID, path.user);
-    //     }
-    // }
-
-    // function requireAccountNormal(
-    //     Store.State storage state,
-    //     uint16 marketID,
-    //     address user
-    // )
-    //     internal
-    //     view
-    // {
-    //     require(
-    //         state.accounts[user][marketID].status == Types.CollateralAccountStatus.Normal,
-    //         "CAN_NOT_OPERATE_LIQUIDATING_COLLATERAL_ACCOUNT"
-    //     );
-    // }
-
-    // function requirePathMarketIDAssetMatch(
-    //     Store.State storage state,
-    //     Types.BalancePath memory path,
-    //     address asset
-    // )
-    //     internal
-    //     view
-    // {
-    //     if (path.category == Types.BalanceCategory.CollateralAccount) {
-    //         requireMarketIDExist(state, path.marketID);
-    //         requireMarketIDAndAssetMatch(state, path.marketID, asset);
-    //     }
-    // }
-
-    // function requireCollateralAccountNotLiquidatable(
-    //     Store.State storage state,
-    //     Types.BalancePath memory path
-    // )
-    //     internal
-    //     view
-    // {
-    //     if (path.category == Types.BalanceCategory.CollateralAccount) {
-    //         requireCollateralAccountNotLiquidatable(state, path.user, path.marketID);
-    //     }
-    // }
-
-    // function requireCollateralAccountNotLiquidatable(
-    //     Store.State storage state,
-    //     address user,
-    //     uint16 marketID
-    // )
-    //     internal
-    //     view
-    // {
-    //     require(
-    //         !CollateralAccounts.getDetails(state, user, marketID).liquidatable,
-    //         "COLLATERAL_ACCOUNT_LIQUIDATABLE"
-    //     );
-    // }
-
-    // function requireAuctionNotFinished(
-    //     Store.State storage state,
-    //     uint32 auctionID
-    // )
-    //     internal
-    //     view
-    // {
-    //     require(
-    //         state.auction.auctions[auctionID].status == Types.AuctionStatus.InProgress,
-    //         "AUCTION_ALREADY_FINISHED"
-    //     );
-    // }
-
-    // function requireAuctionExist(
-    //     Store.State storage state,
-    //     uint32 auctionID
-    // )
-    //     internal
-    //     view
-    // {
-    //     require(
-    //         auctionID < state.auction.auctionsCount,
-    //         "AUCTION_NOT_EXIST"
-    //     );
-    // }
-
-    // function isAssetExist(
-    //     Store.State storage state,
-    //     address asset
-    // )
-    //     private
-    //     view
-    //     returns (bool)
-    // {
-    //     return state.assets[asset].priceOracle != IPriceOracle(address(0));
-    // }
+    function isMarketIdValid(
+        Store.State storage state,
+        uint256 marketId
+    )
+        private
+        view
+        returns(bool)    
+    {
+        if (state.markets[marketId].valid) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     function isMarketExist(
         Store.State storage state,
@@ -242,7 +77,7 @@ library Requires {
     )
         private
         view
-        returns (bool)
+        returns(bool)
     {
         for(uint16 i = 0; i < state.marketsCount; i++) {
             if (state.markets[i].baseAsset == market.baseAsset && state.markets[i].quoteAsset == market.quoteAsset) {
@@ -252,5 +87,4 @@ library Requires {
 
         return false;
     }
-
 }

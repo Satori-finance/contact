@@ -1,3 +1,36 @@
+const BigNumber = require('bignumber.js');
+
+const addLeadingZero = (str, length) => {
+    let len = str.length;
+    return '0'.repeat(length - len) + str;
+};
+
+const addTailingZero = (str, length) => {
+    let len = str.length;
+    return str + '0'.repeat(length - len);
+};
+
+const generateOrderData = (param) => {
+    const version  = param.version
+    const isSell   = param.isSell
+    const isMarket = param.isMarket
+    const isMakerOnly = param.isMakerOnly
+    const marketId = param.marketId
+    const salt = param.salt
+
+    let res = '0x';
+    res += addLeadingZero(new BigNumber(version).toString(16), 2);
+    res += isSell ? '01' : '00';
+    res += isMarket ? '01' : '00';
+    res += isMakerOnly ? '01' : '00';
+
+    res += addLeadingZero(new BigNumber(marketId).toString(16), 2 * 2);
+    res += addLeadingZero(new BigNumber(salt).toString(16), 8 * 2);
+
+    return addTailingZero(res, 66);
+};
+
+
 //@time: "2021-06-30 14:58:20"
 function parseTime(t) {
     return parseInt(Date.parse(t) / 1000);
@@ -37,4 +70,6 @@ module.exports = {
     parseTime,
     formatDate,
     formatDateWithoutSeparator,
+
+    generateOrderData
 }

@@ -25,16 +25,15 @@ library Events {
         uint256 amount
     );
 
-    //TODO
-    event LogTrade(
-        address indexed account,
-        uint256 amount
-    );
-
     event CreateMarket(Types.Market market);
+    event UpdateMarket(Types.Market market);
+
     event DepositForRisk(address indexed from, uint256 amount);
     event WithdrawFromRisk(uint256 amount);
 
+    event IncreaseCollateral(address indexed from, uint256 amount, bytes32 orderHash);
+
+    event DecreaseCollateral(address indexed from, uint256 amount, bytes32 orderHash);
     // ============ Structs ============
 
     // ============ Internal Functions ============
@@ -44,7 +43,7 @@ library Events {
         address asset,
         uint256 amount
     )
-        internal
+    internal
     {
         emit LogDeposit(
             account,
@@ -58,7 +57,7 @@ library Events {
         address asset,
         uint256 amount
     )
-        internal
+    internal
     {
         emit LogWithdraw(
             account,
@@ -73,7 +72,7 @@ library Events {
         address asset,
         uint256 amount
     )
-        internal
+    internal
     {
         emit LogTransfer(
             from,
@@ -83,32 +82,42 @@ library Events {
         );
     }
 
-    //TODO
-    function logTrade(
-        address account,
-        uint256 amount
+
+    function increaseOrDecreaseCollateral(
+        Types.Wei  memory amount,
+        bytes32 orderHash,
+        address account
     )
-        internal
+    internal
     {
-        emit LogTrade(
-            account,
-            amount
-        );
+        if (amount.sign) {
+            emit IncreaseCollateral(account, amount.value, orderHash);
+        } else {
+            emit DecreaseCollateral(account, amount.value, orderHash);
+        }
     }
 
     function logCreateMarket(
         Types.Market memory market
     )
-        internal
+    internal
     {
         emit CreateMarket(market);
+    }
+
+    function logUpdateMarket(
+        Types.Market memory market
+    )
+    internal
+    {
+        emit UpdateMarket(market);
     }
 
     function depositForRisk(
         address from,
         uint256 amount
     )
-        internal
+    internal
     {
         emit DepositForRisk(from, amount);
     }
@@ -116,7 +125,7 @@ library Events {
     function withdrawFromRisk(
         uint256 amount
     )
-        internal
+    internal
     {
         emit WithdrawFromRisk(amount);
     }
